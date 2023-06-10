@@ -4,14 +4,18 @@ from os import listdir
 from nltk.corpus import stopwords
 from keras.preprocessing.text import Tokenizer
 
-def read_csv(f):
-    text = load_doc(f)
-    tokens = clean_doc(text)
+def get_tokenizer(tokens):
     tokenizer = Tokenizer()
     tokenizer.fit_on_texts(tokens)
-    trainingData = tokenizer.texts_to_matrix(text.split("\n"), mode='freq')
-    return trainingData
+    return tokenizer
 
+def tokenize(tokenizer, text):
+    return tokenizer.texts_to_matrix(text.split("\n"), mode='freq')
+
+def load_tokens(f):
+    text = load_doc(f)
+    tokens = clean_doc(text)
+    return tokens
 
 def load_doc(filename):
     file = open(filename, 'r')
