@@ -1,11 +1,32 @@
+from collections import defaultdict
 from utils.parserUtils import get_tokenizer, load_tokens, tokenize, load_doc
 from keras.layers import Dense, Input
 from keras.models import Model, load_model
 from numpy import array
 from models.textModel import create_mlp
 from keras.layers import concatenate
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
-create_model = False
+types = {"Status": 'int', "Type": 'int', "Amount": "float",
+         "ShipAmount": "float", "TaxAmount": "float", "TotalAmount": "float", "Success": "int"}
+csv_train = pd.read_csv(
+    "./data/amount.csv",
+    names=["Status", "Type", "Amount", "ShipAmount", "TaxAmount",
+           "TotalAmount", "Success"],
+    encoding="utf-8",
+    dtype=types, keep_default_na=False)
+print(csv_train)
+
+csv_train.head()
+scaler = MinMaxScaler()
+
+csv_train[['Amount', 'ShipAmount', 'TaxAmount', 'TotalAmount']] = scaler.fit_transform(
+    csv_train[['Amount', 'ShipAmount', 'TaxAmount', 'TotalAmount']])
+
+print(csv_train)
+exit(0)
+create_model = True
 all_tokens = load_tokens("data/pos.txt") + load_tokens("data/neg.txt") + \
     load_tokens("data/test/pos.txt") + load_tokens("data/test/neg.txt")
 
