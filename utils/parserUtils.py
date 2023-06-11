@@ -75,3 +75,19 @@ def make_vocab(fName, out):
     vocab = Counter()
     process_docs(fName, vocab)
     save_file(out)
+
+def make_input_vector(to_make):
+    ret = []
+    for i in to_make:
+        size = i["size"]
+        to_set = i["to_set"]
+
+        to_add = [0] * size
+        if size == 1:
+            to_add[0] = to_set
+        else:
+            to_add[int(to_set)] = 1
+
+        ret += to_add
+
+    return ret
