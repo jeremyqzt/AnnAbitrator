@@ -8,6 +8,7 @@ from keras.layers import concatenate
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, LabelBinarizer
 from sklearn.feature_extraction.text import CountVectorizer
+import pickle5 as pickle
 
 types = {"Description": "str", "Input": "str", "Status": 'int', "Type": 'int', "Amount": "float",
          "ShipAmount": "float", "TaxAmount": "float", "TotalAmount": "float", "Success": "int", "SKU": "str"}
@@ -23,15 +24,15 @@ scaler = MinMaxScaler()
 csv_train[['Amount', 'ShipAmount', 'TaxAmount', 'TotalAmount']] = scaler.fit_transform(
     csv_train[['Amount', 'ShipAmount', 'TaxAmount', 'TotalAmount']])
 
-in_vec = csv_train[['Status', 'Type', 'Amount',
+in_vec = csv_train[['Type', 'Amount',
                     'ShipAmount', 'TaxAmount', 'TotalAmount']].to_numpy()
 
 to_train = []
 for vec in in_vec:
     to_convert = make_input_vector([
-        {"size": 50, "to_set": vec[1]}, {
-            "size": 1, "to_set": vec[3]}, {"size": 1, "to_set": vec[4]},
-        {"size": 1, "to_set": vec[5]}])
+        {"size": 50, "to_set": vec[0]}, {
+            "size": 1, "to_set": vec[1]}, {"size": 1, "to_set": vec[2]},
+        {"size": 1, "to_set": vec[3]}, {"size": 1, "to_set": vec[4]}])
     to_train.append(to_convert)
 
 csv_train.to_csv(
@@ -40,7 +41,6 @@ csv_train.to_csv('data/inp.txt', columns=["Input"], index=False, header=False)
 csv_train.to_csv('data/sku.txt', columns=["SKU"], index=False, header=False)
 
 expected = csv_train[['Success']]
-create_model = True
 trainingDataIn = load_tokens("data/des.txt")
 trainingDataOut = load_tokens("data/inp.txt")
 all_tokens = trainingDataIn + trainingDataOut
@@ -65,6 +65,7 @@ combinedInput = concatenate([pos.output, neg.output, sku.output, other.output])
 x = Dense(16, activation="relu")(combinedInput)
 x = Dense(8, activation="relu")(x)
 x = Dense(1, activation="linear")(x)
+create_model = False
 
 if create_model:
 
@@ -77,8 +78,32 @@ if create_model:
     model.fit(x=[trainingDataIn, trainingDataOut, trainingDataSKU, array(to_train)],
               y=array(expected), epochs=500, verbose=2)
     model.save('saved_model/my_model')
+    with open('tokenizer.pickle', 'wb') as handle:
+        pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    a = model.predict(x=[trainingDataIn, trainingDataOut,
+                    trainingDataSKU, array(to_train)])
+    print(a)
 else:
+    tokenizer = None
+
+
+    to_convert = make_input_vector([
+        {"size": 50, "to_set": 9}, {
+            "size": 1, "to_set": 1}, {"size": 1, "to_set": 1},
+        {"size": 1, "to_set": 2}, {"size": 1, "to_set": 4}])
+
+    with open('tokenizer.pickle', 'rb') as handle:
+        tokenizer = pickle.load(handle)
     model = load_model('saved_model/my_model')
-a = model.predict(x=[trainingDataIn, trainingDataOut,
-                  trainingDataSKU, array(to_train)])
-print(a)
+    trainingDataIn = tokenize(tokenizer, "wtf wtf testing 123".rstrip())
+    trainingDataOut = tokenize(tokenizer, "wtf happy nothing".rstrip())
+    trainingDataSKU = tokenize(tokenizer, "999abves".rstrip())
+    print([trainingDataIn, trainingDataOut,
+                         trainingDataSKU, array([to_convert])])
+    a = model.predict(x=[trainingDataIn, trainingDataOut,
+                         trainingDataSKU, array([to_convert])])
+
+    print(a)
+
+
