@@ -11,12 +11,11 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 types = {"Description": "str", "Input": "str", "Status": 'int', "Type": 'int', "Amount": "float",
          "ShipAmount": "float", "TaxAmount": "float", "TotalAmount": "float", "Success": "int", "SKU": "str"}
-csv_train = pd.read_csv(
-    "./data/amount.csv",
-    names=["Description", "Input", "SKU", "Status", "Type", "Amount", "ShipAmount", "TaxAmount",
-           "TotalAmount", "Success"],
-    encoding="utf-8",
-    dtype=types, keep_default_na=False)
+csv_train = pd.read_csv("./data/amount.csv",
+                        names=["Description", "Input", "SKU", "Status", "Type", "Amount", "ShipAmount", "TaxAmount",
+                               "TotalAmount", "Success"],
+                        encoding="utf-8",
+                        dtype=types, keep_default_na=False)
 
 csv_train.head()
 scaler = MinMaxScaler()
@@ -30,7 +29,8 @@ in_vec = csv_train[['Status', 'Type', 'Amount',
 to_train = []
 for vec in in_vec:
     to_convert = make_input_vector([
-        {"size": 50, "to_set": vec[1]}, {"size": 1, "to_set": vec[3]}, {"size": 1, "to_set": vec[4]},
+        {"size": 50, "to_set": vec[1]}, {
+            "size": 1, "to_set": vec[3]}, {"size": 1, "to_set": vec[4]},
         {"size": 1, "to_set": vec[5]}])
     to_train.append(to_convert)
 
@@ -60,7 +60,7 @@ neg = create_mlp(n_words2)
 sku = create_category_mlp(n_words3)
 other = create_category_mlp(len(to_train[0]))
 
-combinedInput = concatenate([pos.output, neg.output, other.output, sku.output])
+combinedInput = concatenate([pos.output, neg.output, sku.output, other.output])
 
 x = Dense(16, activation="relu")(combinedInput)
 x = Dense(8, activation="relu")(x)
@@ -68,15 +68,17 @@ x = Dense(1, activation="linear")(x)
 
 if create_model:
 
-    model = Model(inputs=[pos.input, neg.input, other.input, sku.input], outputs=x)
+    model = Model(inputs=[pos.input, neg.input,
+                  sku.input, other.input], outputs=x)
     model.compile(loss='binary_crossentropy',
                   optimizer='adam', metrics=['accuracy'])
 
     print(trainingDataIn)
-    model.fit(x=[trainingDataIn, trainingDataOut, array(to_train)],
+    model.fit(x=[trainingDataIn, trainingDataOut, trainingDataSKU, array(to_train)],
               y=array(expected), epochs=500, verbose=2)
     model.save('saved_model/my_model')
 else:
     model = load_model('saved_model/my_model')
-a = model.predict(x=[trainingDataIn, trainingDataOut,  array(to_train)])
+a = model.predict(x=[trainingDataIn, trainingDataOut,
+                  trainingDataSKU, array(to_train)])
 print(a)
