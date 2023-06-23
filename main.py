@@ -9,6 +9,7 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, LabelBinarizer
 from sklearn.feature_extraction.text import CountVectorizer
 import pickle5 as pickle
+import joblib
 
 types = {"Description": "str", "Input": "str", "Status": 'int', "Type": 'int', "Amount": "float",
          "ShipAmount": "float", "TaxAmount": "float", "TotalAmount": "float", "Success": "int", "SKU": "str"}
@@ -65,7 +66,7 @@ combinedInput = concatenate([pos.output, neg.output, sku.output, other.output])
 x = Dense(16, activation="relu")(combinedInput)
 x = Dense(8, activation="relu")(x)
 x = Dense(1, activation="linear")(x)
-create_model = False
+create_model = True
 
 if create_model:
 
@@ -83,9 +84,13 @@ if create_model:
 
     a = model.predict(x=[trainingDataIn, trainingDataOut,
                     trainingDataSKU, array(to_train)])
+
+    joblib.dump(scaler, 'scaler.gz')
+
     print(a)
 else:
     tokenizer = None
+    my_scaler = joblib.load('scaler.gz')
 
 
     to_convert = make_input_vector([
